@@ -1,0 +1,13 @@
+pandas
+tqdm
+fastapi
+uvicorn[standard]
+python-dotenv
+pinecone
+google-genai
+requests
+beautifulsoup4
+ratelimit
+backoff
+neo4j
+python-multipart
