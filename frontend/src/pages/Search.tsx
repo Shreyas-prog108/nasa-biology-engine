@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search as SearchIcon, Filter, ExternalLink, BookOpen, Calendar, User } from 'lucide-react'
+import { Search as SearchIcon, Filter, ExternalLink, BookOpen, User } from 'lucide-react'
 import { searchPublications } from '../services/api'
 import { SearchResponse } from '../services/api'
 import toast from 'react-hot-toast'
@@ -39,18 +39,18 @@ const Search: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Search Publications</h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold text-white mb-4">🔍 Search Publications</h1>
+        <p className="text-gray-300 max-w-2xl mx-auto">
           Search through 600+ NASA space biology publications using semantic search technology
         </p>
       </div>
 
       {/* Search Form */}
-      <motion.div
+        <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="card max-w-4xl mx-auto"
+        className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 max-w-4xl mx-auto"
       >
         <form onSubmit={handleSearch} className="space-y-6">
           <div className="relative">
@@ -60,19 +60,19 @@ const Search: React.FC = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search for research topics, organisms, or biological processes..."
-              className="input-field pl-12 text-lg"
+              className="w-full px-4 py-3 pl-12 bg-gray-800/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200"
               disabled={loading}
             />
           </div>
 
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4 text-gray-500" />
-              <label className="text-sm font-medium text-gray-700">Results:</label>
+              <Filter className="h-4 w-4 text-gray-400" />
+              <label className="text-sm font-medium text-gray-300">Results:</label>
               <select
                 value={topK}
                 onChange={(e) => setTopK(Number(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 bg-gray-800/50 border border-gray-600/50 rounded-lg text-white focus:ring-2 focus:ring-cyan-500"
                 disabled={loading}
               >
                 <option value={5}>5 results</option>
@@ -83,11 +83,11 @@ const Search: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Source:</label>
+              <label className="text-sm font-medium text-gray-300">Source:</label>
               <select
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 bg-gray-800/50 border border-gray-600/50 rounded-lg text-white focus:ring-2 focus:ring-cyan-500"
                 disabled={loading}
               >
                 <option value="nasa_publications">NASA Publications</option>
@@ -98,7 +98,7 @@ const Search: React.FC = () => {
             <button
               type="submit"
               disabled={loading || !query.trim()}
-              className="btn-primary ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="flex items-center space-x-2">
@@ -122,10 +122,10 @@ const Search: React.FC = () => {
           className="space-y-4"
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Search Results ({results.length})
+            <h2 className="text-xl font-semibold text-white">
+              🔍 Search Results ({results.length})
             </h2>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-300">
               Click on any result to view the full publication
             </div>
           </div>
@@ -137,7 +137,7 @@ const Search: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                className="card hover:shadow-lg transition-all duration-200 cursor-pointer group"
+                className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 hover:border-gray-600/50 hover:shadow-lg transition-all duration-200 cursor-pointer group"
                 onClick={() => handleResultClick(result)}
               >
                 <div className="flex items-start justify-between">
@@ -149,17 +149,17 @@ const Search: React.FC = () => {
                       <span className="text-sm text-gray-500">Score: {(result.score * 100).toFixed(1)}%</span>
                     </div>
                     
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-nasa-blue transition-colors">
+                    <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-cyan-400 transition-colors">
                       {result.title}
                     </h3>
                     
                     {result.abstract && (
-                      <p className="text-gray-600 mb-3 line-clamp-3">
+                      <p className="text-gray-300 mb-3 line-clamp-3">
                         {result.abstract}
                       </p>
                     )}
                     
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <div className="flex items-center space-x-4 text-sm text-gray-300">
                       <div className="flex items-center space-x-1">
                         <ExternalLink className="h-3 w-3" />
                         <span>View Publication</span>
@@ -172,8 +172,8 @@ const Search: React.FC = () => {
                   </div>
                   
                   <div className="ml-4 flex-shrink-0">
-                    <div className="w-12 h-12 bg-nasa-blue bg-opacity-10 rounded-lg flex items-center justify-center">
-                      <ExternalLink className="h-6 w-6 text-nasa-blue" />
+                    <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                      <ExternalLink className="h-6 w-6 text-cyan-400" />
                     </div>
                   </div>
                 </div>

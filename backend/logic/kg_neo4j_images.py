@@ -11,8 +11,11 @@ try:
     NEO4J_USER=os.getenv("NEO4J_USER","neo4j")
     NEO4J_PASSWORD=os.getenv("NEO4J_PASSWORD","password")
     
+    # For neo4j+s:// and bolt+s:// URIs, encryption is handled automatically
     driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+    
     NEO4J_AVAILABLE = True
+    print(f"Neo4j driver initialized for: {NEO4J_URI}")
 except ImportError:
     print("Neo4j package not installed. Run: pip install neo4j")
     NEO4J_AVAILABLE = False

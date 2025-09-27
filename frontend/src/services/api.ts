@@ -4,8 +4,19 @@ const API_BASE_URL = '/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 5000, // Reduced timeout to 5 seconds
 })
+
+// Add request interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === 'ECONNABORTED') {
+      console.warn('API request timeout')
+    }
+    return Promise.reject(error)
+  }
+)
 
 // Types
 export interface Publication {
@@ -117,6 +128,11 @@ export const checkNeo4jStatus = async () => {
 
 export const searchKnowledgeGraph = async (query: string, limit: number = 10) => {
   const response = await api.get(`/neo4j/search?query=${encodeURIComponent(query)}&limit=${limit}`)
+  return response.data
+}
+
+export const getGraphVisualizationData = async (limit: number = 50) => {
+  const response = await api.get(`/neo4j/graph-data?limit=${limit}`)
   return response.data
 }
 

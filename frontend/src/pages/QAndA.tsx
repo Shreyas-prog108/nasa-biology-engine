@@ -4,6 +4,8 @@ import { MessageCircle, Send, ExternalLink, BookOpen, Brain, Clock } from 'lucid
 import { askQuestion } from '../services/api'
 import { QAResponse } from '../services/api'
 import toast from 'react-hot-toast'
+import ReactMarkdown from 'react-markdown'
+
 
 const QAndA: React.FC = () => {
   const [question, setQuestion] = useState('')
@@ -50,7 +52,7 @@ const QAndA: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-4">AI-Powered Q&A</h1>
         <p className="text-gray-600 max-w-2xl mx-auto">
           Ask questions about NASA space biology research and get intelligent answers 
-          powered by Google Gemini AI
+          powered by AI
         </p>
       </div>
 
@@ -170,9 +172,19 @@ const QAndA: React.FC = () => {
             </div>
             
             <div className="prose prose-gray max-w-none">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+              <ReactMarkdown 
+                className="text-gray-700 leading-relaxed"
+                components={{
+                  p: ({ children }) => <p className="text-gray-700 leading-relaxed whitespace-pre-wrap mb-3">{children}</p>,
+                  strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                  em: ({ children }) => <em className="italic text-gray-800">{children}</em>,
+                  ul: ({ children }) => <ul className="list-disc list-inside space-y-1">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal list-inside space-y-1">{children}</ol>,
+                  li: ({ children }) => <li className="text-gray-700">{children}</li>
+                }}
+              >
                 {answer.answer}
-              </p>
+              </ReactMarkdown>
             </div>
             
             <div className="mt-4 pt-4 border-t border-gray-200">

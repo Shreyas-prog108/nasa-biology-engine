@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Network, Database, Search, Image, FileText, TrendingUp, Activity } from 'lucide-react'
+import { Network, Database, Search, Image, FileText, Activity } from 'lucide-react'
+import GraphVisualization from '../components/GraphVisualization'
 import { getKnowledgeGraphStats, checkNeo4jStatus, getEntities, getTopics, searchKnowledgeGraph } from '../services/api'
 import toast from 'react-hot-toast'
 
@@ -17,6 +18,10 @@ const KnowledgeGraph: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Set loading to false immediately to show the UI
+        setLoading(false)
+        
+        // Fetch data in background
         const [statsData, statusData, entitiesData, topicsData] = await Promise.all([
           getKnowledgeGraphStats(),
           checkNeo4jStatus(),
@@ -30,7 +35,6 @@ const KnowledgeGraph: React.FC = () => {
       } catch (error) {
         console.error('Error fetching knowledge graph data:', error)
         toast.error('Failed to load knowledge graph data')
-      } finally {
         setLoading(false)
       }
     }
@@ -275,23 +279,14 @@ const KnowledgeGraph: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Graph Visualization Placeholder */}
+      {/* Graph Visualization */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.6 }}
         className="card max-w-6xl mx-auto"
       >
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Graph Visualization</h3>
-        <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center">
-          <div className="text-center">
-            <Network className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 mb-2">Interactive Graph Visualization</p>
-            <p className="text-sm text-gray-400">
-              Graph visualization will be implemented with D3.js or Cytoscape.js
-            </p>
-          </div>
-        </div>
+        <GraphVisualization />
       </motion.div>
     </div>
   )

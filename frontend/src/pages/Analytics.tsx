@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart3, TrendingUp, Database, FileText, Activity, PieChart } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts'
 import { getTrends, getEntities, getTopics } from '../services/api'
 import { TrendsData } from '../services/api'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts'
+
 
 const Analytics: React.FC = () => {
   const [trends, setTrends] = useState<TrendsData | null>(null)
@@ -14,6 +15,10 @@ const Analytics: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Set loading to false immediately to show the UI
+        setLoading(false)
+        
+        // Fetch data in background
         const [trendsData, entitiesData, topicsData] = await Promise.all([
           getTrends(),
           getEntities(15),
@@ -24,7 +29,6 @@ const Analytics: React.FC = () => {
         setTopics(topicsData)
       } catch (error) {
         console.error('Error fetching analytics data:', error)
-      } finally {
         setLoading(false)
       }
     }
@@ -48,7 +52,7 @@ const Analytics: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-nasa-blue"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
       </div>
     )
   }
@@ -57,8 +61,8 @@ const Analytics: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Research Analytics</h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold text-white mb-4">🚀 Mission Analytics Dashboard</h1>
+        <p className="text-gray-300 max-w-2xl mx-auto">
           Explore trends, patterns, and insights from NASA space biology research publications
         </p>
       </div>
@@ -70,15 +74,15 @@ const Analytics: React.FC = () => {
         transition={{ duration: 0.5 }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
-        <div className="card">
+        <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Publications</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm font-medium text-gray-400">📚 Total Publications</p>
+              <p className="text-2xl font-bold text-white mt-1">
                 {trends?.total_publications?.toLocaleString() || 0}
               </p>
             </div>
-            <div className="p-3 bg-blue-500 rounded-lg">
+            <div className="p-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg shadow-lg">
               <FileText className="h-6 w-6 text-white" />
             </div>
           </div>

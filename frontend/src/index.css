@@ -2,6 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Modern Space Color Theme */
+:root {
+  --space-deep: #0f0f23;
+  --space-dark: #1a1a3e;
+  --space-blue: #2563eb;
+  --space-cyan: #06b6d4;
+  --space-purple: #8b5cf6;
+  --space-pink: #ec4899;
+  --space-orange: #f97316;
+  --space-green: #10b981;
+  --space-white: #ffffff;
+  --space-gray: #6b7280;
+  --space-light: #f3f4f6;
+}
+
+/* Background Colors */
+.bg-space-deep { background-color: var(--space-deep); }
+.bg-space-dark { background-color: var(--space-dark); }
+.bg-space-blue { background-color: var(--space-blue); }
+.bg-space-cyan { background-color: var(--space-cyan); }
+.bg-space-purple { background-color: var(--space-purple); }
+.bg-space-pink { background-color: var(--space-pink); }
+.bg-space-orange { background-color: var(--space-orange); }
+.bg-space-green { background-color: var(--space-green); }
+
+/* Text Colors */
+.text-space-deep { color: var(--space-deep); }
+.text-space-dark { color: var(--space-dark); }
+.text-space-blue { color: var(--space-blue); }
+.text-space-cyan { color: var(--space-cyan); }
+.text-space-purple { color: var(--space-purple); }
+.text-space-pink { color: var(--space-pink); }
+.text-space-orange { color: var(--space-orange); }
+.text-space-green { color: var(--space-green); }
+
+/* Border Colors */
+.border-space-blue { border-color: var(--space-blue); }
+.border-space-cyan { border-color: var(--space-cyan); }
+.border-space-purple { border-color: var(--space-purple); }
+
+/* Gradients */
+.bg-space-gradient { 
+  background: linear-gradient(135deg, var(--space-deep) 0%, var(--space-dark) 50%, var(--space-blue) 100%);
+}
+.bg-cosmic-gradient {
+  background: linear-gradient(45deg, var(--space-purple) 0%, var(--space-blue) 50%, var(--space-cyan) 100%);
+}
+
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
