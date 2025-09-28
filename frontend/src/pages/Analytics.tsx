@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart3, TrendingUp, Database, FileText, Activity, PieChart } from 'lucide-react'
+import { TrendingUp, Database, FileText, Activity } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts'
 import { getTrends, getEntities, getTopics } from '../services/api'
 import { TrendsData } from '../services/api'

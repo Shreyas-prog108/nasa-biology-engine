@@ -436,6 +436,82 @@ def get_graph_visualization_data(limit: int = 50):
                         "relationship": record["relationship"]
                     }
                 })
+            
+            # If no relationships exist, create semantic connections based on title similarity
+            if not edges and nodes:
+                # Create connections between publications based on common terms
+                pub_nodes = [n for n in nodes if n["data"]["type"] == "publication"]
+                
+                # Create connections between publications with similar topics
+                for i, pub1 in enumerate(pub_nodes):
+                    for j, pub2 in enumerate(pub_nodes[i+1:], i+1):
+                        title1_words = set(pub1["data"]["label"].lower().split())
+                        title2_words = set(pub2["data"]["label"].lower().split())
+                        common_words = title1_words.intersection(title2_words)
+                        
+                        # Remove common stop words for better matching
+                        stop_words = {'the', 'and', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'from', 'as', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'must', 'shall', 'a', 'an', 'study', 'effect', 'analysis', 'research', 'investigation'}
+                        meaningful_words1 = title1_words - stop_words
+                        meaningful_words2 = title2_words - stop_words
+                        meaningful_common = meaningful_words1.intersection(meaningful_words2)
+                        
+                        # Create connection if they share meaningful words
+                        if len(meaningful_common) >= 1:  # If they share 1+ meaningful words
+                            edges.append({
+                                "data": {
+                                    "id": f"{pub1['data']['id']}-{pub2['data']['id']}",
+                                    "source": pub1["data"]["id"],
+                                    "target": pub2["data"]["id"],
+                                    "relationship": "RELATED",
+                                    "strength": len(meaningful_common)
+                                }
+                            })
+                
+                # Also create connections based on research topics
+                research_topics = {
+                    'microgravity': ['microgravity', 'weightlessness', 'gravity', 'spaceflight'],
+                    'radiation': ['radiation', 'cosmic', 'particle', 'irradiation'],
+                    'bone': ['bone', 'skeletal', 'osteo', 'calcium'],
+                    'muscle': ['muscle', 'muscular', 'atrophy', 'myofiber'],
+                    'cell': ['cell', 'cellular', 'molecular', 'mitochondria'],
+                    'plant': ['plant', 'botany', 'growth', 'arabidopsis'],
+                    'protein': ['protein', 'enzyme', 'metabolism', 'synthesis'],
+                    'dna': ['dna', 'genetic', 'genome', 'chromosome']
+                }
+                
+                for pub in pub_nodes:
+                    pub_title = pub["data"]["label"].lower()
+                    pub_topics = []
+                    
+                    for topic, keywords in research_topics.items():
+                        if any(keyword in pub_title for keyword in keywords):
+                            pub_topics.append(topic)
+                    
+                    # Connect publications with same research topics
+                    for other_pub in pub_nodes:
+                        if other_pub["data"]["id"] != pub["data"]["id"]:
+                            other_title = other_pub["data"]["label"].lower()
+                            other_topics = []
+                            
+                            for topic, keywords in research_topics.items():
+                                if any(keyword in other_title for keyword in keywords):
+                                    other_topics.append(topic)
+                            
+                            # If they share research topics, create connection
+                            shared_topics = set(pub_topics).intersection(set(other_topics))
+                            if shared_topics:
+                                edge_id = f"{pub['data']['id']}-{other_pub['data']['id']}"
+                                # Check if edge already exists
+                                if not any(edge["data"]["id"] == edge_id for edge in edges):
+                                    edges.append({
+                                        "data": {
+                                            "id": edge_id,
+                                            "source": pub["data"]["id"],
+                                            "target": other_pub["data"]["id"],
+                                            "relationship": f"SHARES_TOPIC_{list(shared_topics)[0].upper()}",
+                                            "topics": list(shared_topics)
+                                        }
+                                    })
         
         # If no data in Neo4j, create sample graph from recent searches
         if not nodes:
