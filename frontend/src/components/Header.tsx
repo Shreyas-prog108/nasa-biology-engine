@@ -1,14 +1,20 @@
 import React from 'react'
 import { Rocket } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 const Header: React.FC = () => {
+  const navigate = useNavigate()
+
+  const handleLogoClick = () => {
+    navigate('/')
+  }
 
   return (
     <header className="bg-gray-800/90 backdrop-blur-sm border-b border-gray-700/50 fixed top-0 left-0 right-0 z-50">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 cursor-pointer" onClick={handleLogoClick}>
               <Rocket className="h-8 w-8 text-cyan-400" />
               <h1 className="text-2xl font-bold text-white">
                 NASA Space Biology Engine
