@@ -9,13 +9,12 @@ try:
     from neo4j import GraphDatabase
     NEO4J_URI=os.getenv("NEO4J_URI","bolt://localhost:7687")
     NEO4J_USER=os.getenv("NEO4J_USER","neo4j")
-    NEO4J_PASSWORD=os.getenv("NEO4J_PASSWORD","password")
-    
-    # For neo4j+s:// and bolt+s:// URIs, encryption is handled automatically
+    NEO4J_PASSWORD=os.getenv("NEO4J_PASSWORD")
+    if not NEO4J_PASSWORD:
+        raise RuntimeError("NEO4J_PASSWORD environment variable must be set!")
     driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
     
     NEO4J_AVAILABLE = True
-    print(f"Neo4j driver initialized for: {NEO4J_URI}")
 except ImportError:
     print("Neo4j package not installed. Run: pip install neo4j")
     NEO4J_AVAILABLE = False
@@ -36,8 +35,8 @@ def encode_image_to_base64(image_path):
         return None
 
 def create_image_hash(image_data):
-    """Create unique hash for image deduplication"""
-    return hashlib.md5(image_data.encode()).hexdigest()
+    """Create unique hash for image deduplication using SHA-256"""
+    return hashlib.sha256(image_data.encode()).hexdigest()[:32]  # Use first 32 chars for shorter hash
 
 def add_publication_with_images(tx, pub_id, title, abstract, images=None):
     """Add publication node with associated images"""
@@ -95,7 +94,7 @@ def add_entity_with_image(tx, entity_name, entity_type, image_data=None):
 
 def add_research_finding(tx, finding_text, publication_id, confidence=0.5):
     """Add research finding extracted from text"""
-    finding_hash = hashlib.md5(finding_text.encode()).hexdigest()
+    finding_hash = hashlib.sha256(finding_text.encode()).hexdigest()[:32]
     tx.run("""
         MERGE (f:Finding {hash: $hash})
         SET f.text = $text, f.confidence = $confidence, f.created_at = datetime()

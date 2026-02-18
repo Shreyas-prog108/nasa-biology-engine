@@ -8,7 +8,9 @@ import jwt
 
 # Database configuration
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'users.db')
-JWT_SECRET = os.getenv('JWT_SECRET', 'your-secret-key-change-in-production')
+JWT_SECRET = os.getenv('JWT_SECRET')
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET environment variable must be set!")
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRATION_HOURS = 24
 

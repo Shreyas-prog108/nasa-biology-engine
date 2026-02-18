@@ -3,8 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import os
-import numpy as np
-import hashlib
 from dotenv import load_dotenv
 from pinecone import Pinecone
 from google import genai
@@ -14,28 +12,28 @@ from collections import Counter
 
 
 load_dotenv()
-pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-INDEX_NAME = "space-biology"
-index = pc.Index(INDEX_NAME)
+
+# Initialize Pinecone with error handling
+try:
+    pinecone_api_key = os.getenv("PINECONE_API_KEY")
+    if not pinecone_api_key or pinecone_api_key == "your_pinecone_api_key_here":
+        print("⚠️  Warning: Pinecone API key not configured. Q&A and Search features will be limited.")
+        pc = None
+        index = None
+    else:
+        pc = Pinecone(api_key=pinecone_api_key)
+        INDEX_NAME = "space-biology"
+        index = pc.Index(INDEX_NAME)
+except Exception as e:
+    print(f"⚠️  Warning: Pinecone initialization failed: {str(e)}")
+    pc = None
+    index = None
 
 # Initialize Gemini client
 try:
     gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 except:
     gemini_client = None
-
-def create_dummy_embedding(text, dim=1024):
-    """Create consistent dummy embedding for queries"""
-    text_hash = hashlib.md5(text.encode()).hexdigest()
-    seed = int(text_hash[:8], 16)
-    np.random.seed(seed)
-    embedding = np.random.normal(0, 1, dim)
-    embedding = embedding / np.linalg.norm(embedding)
-    return embedding.tolist()
-
-def embed_texts(texts):
-    """Use dummy embeddings for queries (matching your ingested data)"""
-    return [create_dummy_embedding(text) for text in texts]
 
 # Pydantic models for authentication
 class UserSignup(BaseModel):
@@ -66,38 +64,59 @@ app.add_middleware(
 
 @app.get("/search")
 def search(q: str = Query(...), top_k: int = 5, source: str | None = None):
-    """Search across 600+ NASA publications"""
-    emb = embed_texts([q])[0]
-    query = {"vector": emb, "top_k": top_k, "include_metadata": True}
-    if source:
-        query["filter"] = {"source": {"$eq": source}}
-    else:
-        query["filter"] = {"source": {"$eq": "nasa_publications"}}
+    """Search across 600+ NASA publications using real embeddings"""
+    if not index:
+        raise HTTPException(status_code=503, detail="Search service unavailable. Pinecone not configured.")
     
-    res = index.query(**query)
-    return [
-        {
-            "id": m["id"],
-            "title": m["metadata"]["title"],
-            "link": m["metadata"].get("link", ""),
-            "abstract": m["metadata"].get("abstract", ""),
-            "source": m["metadata"]["source"],
-            "score": m["score"],
-            "row_id": m["metadata"].get("row_id", "")
-        }
-        for m in res["matches"]
-    ]
+    try:
+        # Use REAL embeddings from Gemini
+        emb = embed_texts([q])[0]
+        query = {"vector": emb, "top_k": top_k, "include_metadata": True}
+        if source:
+            query["filter"] = {"source": {"$eq": source}}
+        else:
+            query["filter"] = {"source": {"$eq": "nasa_publications"}}
+        
+        res = index.query(**query)
+        return [
+            {
+                "id": m["id"],
+                "title": m["metadata"]["title"],
+                "link": m["metadata"].get("link", ""),
+                "abstract": m["metadata"].get("abstract", ""),
+                "source": m["metadata"]["source"],
+                "score": m["score"],
+                "row_id": m["metadata"].get("row_id", "")
+            }
+            for m in res["matches"]
+        ]
+    except Exception as e:
+        import traceback
+        print(f"Search error: {e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
 
 @app.get("/qa")
 def qa(q: str = Query(...), top_k: int = 5, source: str | None = None):
-    """Q&A across 600+ NASA publications"""
-    emb = embed_texts([q])[0]
-    query = {"vector": emb, "top_k": top_k, "include_metadata": True}
-    if source:
-        query["filter"] = {"source": {"$eq": source}}
-    else:
-        query["filter"] = {"source": {"$eq": "nasa_publications"}}
-    res = index.query(**query)
+    """Q&A across 600+ NASA publications using real embeddings"""
+    if not index:
+        raise HTTPException(status_code=503, detail="Q&A service unavailable. Pinecone not configured.")
+    
+    try:
+        # Use REAL embeddings from Gemini
+        emb = embed_texts([q])[0]
+        query = {"vector": emb, "top_k": top_k, "include_metadata": True}
+        if source:
+            query["filter"] = {"source": {"$eq": source}}
+        else:
+            query["filter"] = {"source": {"$eq": "nasa_publications"}}
+        res = index.query(**query)
+    except Exception as e:
+        import traceback
+        print(f"Error in QA endpoint: {str(e)}")
+        print(f"Full traceback:\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
+    
     context = "\n\n".join([
         f"Title: {m['metadata']['title']}\nAbstract: {m['metadata'].get('abstract', 'No abstract available')}\nLink: {m['metadata'].get('link', 'N/A')}" 
         for m in res["matches"]
@@ -143,7 +162,7 @@ def qa(q: str = Query(...), top_k: int = 5, source: str | None = None):
         if gemini_client:
             prompt = f"Use the following NASA space biology publications to answer:\n\n{context}\n\nQuestion: {q}\nProvide a comprehensive answer in 4-5 sentences, citing specific publication titles and key findings."
             resp = gemini_client.models.generate_content(
-                model="gemini-2.0-flash", contents=prompt
+                model="gemini-2.5-flash-lite", contents=prompt
             )
             answer = resp.text
         else:
@@ -302,7 +321,7 @@ Return structured information that can be used to build a knowledge graph."""
 
             try:
                 resp = gemini_client.models.generate_content(
-                    model="gemini-2.0-flash", contents=prompt
+                    model="gemini-2.5-flash-lite", contents=prompt
                 )
                 
                 # Store basic publication info in Neo4j for future searches
@@ -480,38 +499,52 @@ def get_graph_visualization_data(limit: int = 50):
                 }
                 
                 for pub in pub_nodes:
-                    pub_title = pub["data"]["label"].lower()
-                    pub_topics = []
-                    
-                    for topic, keywords in research_topics.items():
-                        if any(keyword in pub_title for keyword in keywords):
-                            pub_topics.append(topic)
-                    
-                    # Connect publications with same research topics
-                    for other_pub in pub_nodes:
-                        if other_pub["data"]["id"] != pub["data"]["id"]:
-                            other_title = other_pub["data"]["label"].lower()
-                            other_topics = []
+                    try:
+                        pub_title = pub.get("data", {}).get("label", "").lower()
+                        if not pub_title:
+                            continue
                             
-                            for topic, keywords in research_topics.items():
-                                if any(keyword in other_title for keyword in keywords):
-                                    other_topics.append(topic)
-                            
-                            # If they share research topics, create connection
-                            shared_topics = set(pub_topics).intersection(set(other_topics))
-                            if shared_topics:
-                                edge_id = f"{pub['data']['id']}-{other_pub['data']['id']}"
-                                # Check if edge already exists
-                                if not any(edge["data"]["id"] == edge_id for edge in edges):
-                                    edges.append({
-                                        "data": {
-                                            "id": edge_id,
-                                            "source": pub["data"]["id"],
-                                            "target": other_pub["data"]["id"],
-                                            "relationship": f"SHARES_TOPIC_{list(shared_topics)[0].upper()}",
-                                            "topics": list(shared_topics)
-                                        }
-                                    })
+                        pub_topics = []
+                        
+                        for topic, keywords in research_topics.items():
+                            if any(keyword in pub_title for keyword in keywords):
+                                pub_topics.append(topic)
+                        
+                        # Connect publications with same research topics
+                        for other_pub in pub_nodes:
+                            try:
+                                if other_pub.get("data", {}).get("id") != pub.get("data", {}).get("id"):
+                                    other_title = other_pub.get("data", {}).get("label", "").lower()
+                                    if not other_title:
+                                        continue
+                                        
+                                    other_topics = []
+                                    
+                                    for topic, keywords in research_topics.items():
+                                        if any(keyword in other_title for keyword in keywords):
+                                            other_topics.append(topic)
+                                    
+                                    # If they share research topics, create connection
+                                    shared_topics = set(pub_topics).intersection(set(other_topics))
+                                    if shared_topics:
+                                        edge_id = f"{pub['data']['id']}-{other_pub['data']['id']}"
+                                        # Check if edge already exists
+                                        if not any(edge.get("data", {}).get("id") == edge_id for edge in edges):
+                                            edges.append({
+                                                "data": {
+                                                    "id": edge_id,
+                                                    "source": pub["data"]["id"],
+                                                    "target": other_pub["data"]["id"],
+                                                    "relationship": f"SHARES_TOPIC_{list(shared_topics)[0].upper()}",
+                                                    "topics": list(shared_topics)
+                                                }
+                                            })
+                            except Exception as inner_e:
+                                print(f"Error processing publication pair: {str(inner_e)}")
+                                continue
+                    except Exception as outer_e:
+                        print(f"Error processing publication: {str(outer_e)}")
+                        continue
         
         # If no data in Neo4j, create sample graph from recent searches
         if not nodes:
@@ -563,7 +596,11 @@ def get_graph_visualization_data(limit: int = 50):
         }
         
     except Exception as e:
-        return {"error": str(e)}
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in get_graph_visualization_data: {str(e)}")
+        print(f"Full traceback:\n{error_details}")
+        return {"error": str(e), "details": error_details}
 
 @app.get("/neo4j/stats")
 def get_kg_statistics():
@@ -726,80 +763,7 @@ def trends():
         return {"error": f"Analytics unavailable: {str(e)}"}
 
 # -------------------
-# Authentication API
+# Authentication API (Legacy - Moved to auth_oauth.py for GitHub OAuth)
 # -------------------
-
-def get_current_user(authorization: str = Header(None)):
-    """Dependency to get current user from JWT token"""
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Authorization header required")
-    
-    try:
-        token = authorization.replace("Bearer ", "")
-        result = verify_token(token)
-        if not result["success"]:
-            raise HTTPException(status_code=401, detail=result["message"])
-        return result["user"]
-    except Exception as e:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-@app.post("/auth/signup", response_model=TokenResponse)
-def signup(user_data: UserSignup):
-    """Create a new user account"""
-    result = create_user(user_data.username, user_data.email, user_data.password)
-    if not result["success"]:
-        raise HTTPException(status_code=400, detail=result["message"])
-    
-    return TokenResponse(
-        success=True,
-        message=result["message"],
-        token=None,
-        user=None
-    )
-
-@app.post("/auth/login", response_model=TokenResponse)
-def login(user_data: UserLogin):
-    """Authenticate user and return JWT token"""
-    result = authenticate_user(user_data.username, user_data.password)
-    if not result["success"]:
-        raise HTTPException(status_code=401, detail=result["message"])
-    
-    return TokenResponse(
-        success=True,
-        message=result["message"],
-        token=result["token"],
-        user=result["user"]
-    )
-
-@app.post("/auth/logout")
-def logout(authorization: str = Header(None)):
-    """Logout user by invalidating token"""
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Authorization header required")
-    
-    try:
-        token = authorization.replace("Bearer ", "")
-        result = logout_user(token)
-        if not result["success"]:
-            raise HTTPException(status_code=400, detail=result["message"])
-        
-        return {"success": True, "message": result["message"]}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Logout failed")
-
-@app.get("/auth/me")
-def get_current_user_info(current_user: dict = Depends(get_current_user)):
-    """Get current user information"""
-    return {
-        "success": True,
-        "user": current_user
-    }
-
-@app.get("/auth/verify")
-def verify_user_token(current_user: dict = Depends(get_current_user)):
-    """Verify if token is valid"""
-    return {
-        "success": True,
-        "message": "Token is valid",
-        "user": current_user
-    }
+# Note: All auth endpoints are now handled by auth_oauth.py
+# Keeping imports for backward compatibility with existing token verification

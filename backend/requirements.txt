@@ -11,4 +11,9 @@ ratelimit
 backoff
 neo4j
 python-multipart
-jwt
+pyjwt
+motor
+pymongo
+authlib
+httpx
+cryptography
